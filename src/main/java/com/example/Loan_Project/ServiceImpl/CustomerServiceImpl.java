@@ -5,6 +5,7 @@ import com.example.Loan_Project.Entity.Customer;
 import com.example.Loan_Project.Exception.EmailAlreadyExistsException;
 import com.example.Loan_Project.Repository.CustomerRepository;
 import com.example.Loan_Project.Service.CustomerService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,9 +14,11 @@ import java.time.LocalDateTime;
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public CustomerServiceImpl(CustomerRepository customerRepository) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
         this.customerRepository = customerRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -31,7 +34,7 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setLastName(customerRegistrationRequest.getLastName());
         customer.setAge(customerRegistrationRequest.getAge());
         customer.setEmail(customerRegistrationRequest.getEmail());
-        customer.setPassword(customerRegistrationRequest.getPassword());
+        customer.setPassword(passwordEncoder.encode(customerRegistrationRequest.getPassword()));
         customer.setMobileNo(customerRegistrationRequest.getMobileNo());
         customer.setPanNo(customerRegistrationRequest.getPanNo());
         customer.setAadhaarNo(customerRegistrationRequest.getAadhaarNo());
