@@ -1,8 +1,11 @@
 package com.example.Loan_Project.ServiceImpl;
 
 import com.example.Loan_Project.DTO.CustomerRegistrationRequest;
+import com.example.Loan_Project.DTO.LoginRequest;
 import com.example.Loan_Project.Entity.Customer;
 import com.example.Loan_Project.Exception.EmailAlreadyExistsException;
+import com.example.Loan_Project.Exception.EmailNotVerifiedException;
+import com.example.Loan_Project.Exception.InvalidCredentialsException;
 import com.example.Loan_Project.Repository.CustomerRepository;
 import com.example.Loan_Project.Service.CustomerService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +47,24 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setCreatedAt(LocalDateTime.now());
 
         customerRepository.save(customer);
+
+        return customer;
+
+    }
+
+    @Override
+    public Customer login(LoginRequest loginRequest) {
+
+        Customer customer = customerRepository.findByEmail(loginRequest.getEmail()).
+                orElseThrow(()-> new InvalidCredentialsException("Email doesn't exist"));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), customer.getPassword())){
+            throw new InvalidCredentialsException("Password do not match");
+        }
+
+        if(!customer.getIsEmailVerified()){
+            throw new EmailNotVerifiedException("Please Verify you email");
+        }
 
         return customer;
 

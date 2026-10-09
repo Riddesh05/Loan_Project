@@ -2,7 +2,8 @@ package com.example.Loan_Project.Entity;
 
 public enum EmploymentType {
 
-    SALARIED,
-    BUSINESS,
+    GOVERNMENT,
+    PRIVATE_SECTOR,
     SELF_EMPLOYED
+
 }

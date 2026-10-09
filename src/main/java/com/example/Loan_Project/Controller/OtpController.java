@@ -2,13 +2,14 @@ package com.example.Loan_Project.Controller;
 
 
 import com.example.Loan_Project.DTO.VerifyOtpRequest;
+import com.example.Loan_Project.Response.ApiResponse;
 import com.example.Loan_Project.Service.OtpService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/customers")
+@RequestMapping("/api/v1/customers")
 public class OtpController {
 
     private final OtpService otpService;
@@ -19,16 +20,23 @@ public class OtpController {
 
 
     @PostMapping("/send-otp")
-    public ResponseEntity<String> sendOtp(
+    public ResponseEntity<ApiResponse<String>> sendOtp(
             @RequestParam String email) {
 
         otpService.generateAndStoreOtp(email);
 
-        return ResponseEntity.ok("OTP generated successfully");
+        ApiResponse<String> response =
+                new ApiResponse<>(
+                        true,
+                        "OTP sent successfully",
+                        null
+                );
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<String> verifyOtp(
+    public ResponseEntity<ApiResponse<String>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
 
         boolean verified = otpService.verifyOtp(
@@ -37,12 +45,23 @@ public class OtpController {
         );
 
         if (verified) {
-            return ResponseEntity.ok("Email verified successfully");
+            ApiResponse<String> response =
+                    new ApiResponse<>(
+                            true,
+                            "Email verified successfully",
+                            null
+                    );
+            return ResponseEntity.ok(response);
         }
 
-        return ResponseEntity
-                .badRequest()
-                .body("Invalid or expired OTP");
+        ApiResponse<String> response =
+                new ApiResponse<>(
+                        false,
+                        "Invalid or expired OTP",
+                        null
+                );
+
+        return ResponseEntity.badRequest().body(response);
     }
 
 }

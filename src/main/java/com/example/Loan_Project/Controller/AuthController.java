@@ -1,7 +1,8 @@
 package com.example.Loan_Project.Controller;
 
 
-import com.example.Loan_Project.DTO.CustomerRegistrationRequest;
+import com.example.Loan_Project.DTO.LoginRequest;
+import com.example.Loan_Project.DTO.LoginResponse;
 import com.example.Loan_Project.Entity.Customer;
 import com.example.Loan_Project.Response.ApiResponse;
 import com.example.Loan_Project.Service.CustomerService;
@@ -13,26 +14,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/customers")
-public class CustomerController {
+@RequestMapping("/api/v1/auth")
+public class AuthController {
 
     private final CustomerService customerService;
 
-    public CustomerController(CustomerService customerService) {
+    public AuthController(CustomerService customerService) {
         this.customerService = customerService;
     }
 
 
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Customer>> register(@Valid @RequestBody CustomerRegistrationRequest
-                                                     customerRegistrationRequest){
-        Customer customer = customerService.register(customerRegistrationRequest);
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>>
+    login(@Valid @RequestBody LoginRequest loginRequest)
+    {
+        Customer customer = customerService.login(loginRequest);
 
-        ApiResponse<Customer> response =
+        LoginResponse loginResponse = new LoginResponse(
+                customer.getCustomerId(),
+                customer.getFirstName(),
+                customer.getLastName(),
+                customer.getEmail()
+        );
+
+        ApiResponse<LoginResponse> response =
                 new ApiResponse<>(
                         true,
-                        "Registration Successfull",
-                        customer
+                        "Login Successfull",
+                        loginResponse
                 );
 
         return ResponseEntity.ok(response);
