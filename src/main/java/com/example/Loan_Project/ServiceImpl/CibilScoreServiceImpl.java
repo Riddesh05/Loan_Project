@@ -41,10 +41,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         this.modelMapper = modelMapper;
     }
 
-    // =========================================================
     // 1. CALCULATE CIBIL SCORE
-    // =========================================================
-
     @Override
     @CacheEvict(value = {"allCibilReports", "cibilReports"}, allEntries = true)
     public CibilCalculationResponse calculateCibilScore(Long customerId) {
@@ -100,10 +97,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         logger.info("FOIR calculated for customer ID {}: {}%",
                 customerId, foir);
 
-        // =====================================================
         // 2. AUTOMATIC REJECTION IF FOIR > 50%
-        // =====================================================
-
         if (foir.compareTo(BigDecimal.valueOf(50)) > 0) {
 
             CibilReport rejectedReport = new CibilReport();
@@ -131,9 +125,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
             return convertToResponse(savedReport);
         }
 
-        // =====================================================
         // 3. CALCULATE INDIVIDUAL FACTOR SCORES
-        // =====================================================
 
         int incomeScore = calculateIncomeScore(income);
         int employmentScore = calculateEmploymentScore(employmentType);
@@ -144,26 +136,19 @@ public class CibilScoreServiceImpl implements CibilScoreService {
                 "Customer ID {} factor scores: income={}, employment={}, age={}, FOIR={}",
                 customerId, incomeScore, employmentScore, ageScore, foirScore);
 
-        // =====================================================
         // 4. CALCULATE FINAL SCORE
-        // =====================================================
 
         int cibilScore =
                 incomeScore + employmentScore + ageScore + foirScore;
 
-        // =====================================================
         // 5. DETERMINE STATUS, DECISION, ELIGIBILITY AND LOAN AMOUNT
-        // =====================================================
 
         String status = calculateStatus(cibilScore);
         String decision = calculateDecision(cibilScore);
         String eligibility = calculateEligibility(cibilScore);
         BigDecimal loanAmount = calculateLoanAmount(cibilScore);
 
-        // =====================================================
         // 6. CREATE AND SAVE CIBIL REPORT
-        // =====================================================
-
         CibilReport report = new CibilReport();
 
         report.setCustomerId(customerId);
@@ -188,10 +173,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return convertToResponse(savedReport);
     }
 
-    // =========================================================
     // 7. INCOME SCORE
-    // =========================================================
-
     private int calculateIncomeScore(BigDecimal income) {
 
         if (income.compareTo(BigDecimal.valueOf(25_000)) < 0) {
@@ -209,10 +191,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return 400;
     }
 
-    // =========================================================
     // 8. EMPLOYMENT SCORE
-    // =========================================================
-
     private int calculateEmploymentScore(String employmentType) {
 
         return switch (employmentType) {
@@ -223,10 +202,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         };
     }
 
-    // =========================================================
     // 9. AGE SCORE
-    // =========================================================
-
     private int calculateAgeScore(Integer age) {
 
         if (age == null) {
@@ -248,10 +224,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return 0;
     }
 
-    // =========================================================
     // 10. FOIR SCORE
-    // =========================================================
-
     private int calculateFoirScore(BigDecimal foir) {
 
         if (foir.compareTo(BigDecimal.valueOf(30)) < 0) {
@@ -265,10 +238,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return 0;
     }
 
-    // =========================================================
     // 11. STATUS
-    // =========================================================
-
     private String calculateStatus(int cibilScore) {
 
         if (cibilScore >= 900) {
@@ -294,10 +264,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return "REJECT";
     }
 
-    // =========================================================
     // 12. DECISION
-    // =========================================================
-
     private String calculateDecision(int cibilScore) {
 
         if (cibilScore >= 800) {
@@ -311,10 +278,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return "REJECT";
     }
 
-    // =========================================================
     // 13. ELIGIBILITY
-    // =========================================================
-
     private String calculateEligibility(int cibilScore) {
 
         return cibilScore >= 650
@@ -322,10 +286,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
                 : "NOT_ELIGIBLE";
     }
 
-    // =========================================================
     // 14. LOAN AMOUNT
-    // =========================================================
-
     private BigDecimal calculateLoanAmount(int cibilScore) {
 
         if (cibilScore >= 900) {
@@ -351,19 +312,13 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return BigDecimal.ZERO;
     }
 
-    // =========================================================
     // 15. ENTITY TO RESPONSE DTO
-    // =========================================================
-
     private CibilCalculationResponse convertToResponse(CibilReport report) {
 
         return modelMapper.map(report, CibilCalculationResponse.class);
     }
 
-    // =========================================================
     // 16. GET LATEST CIBIL REPORT FOR A CUSTOMER
-    // =========================================================
-
     @Override
     @Cacheable(value = "cibilReports", key = "#customerId")
     public CibilCalculationResponse getLatestCibilReport(Long customerId) {
@@ -381,10 +336,7 @@ public class CibilScoreServiceImpl implements CibilScoreService {
         return convertToResponse(report);
     }
 
-    // =========================================================
     // 17. GET ALL CIBIL REPORTS
-    // =========================================================
-
     @Override
     @Cacheable(value = "allCibilReports")
     public List<CibilCalculationResponse> getAllCibilReports() {

@@ -7,11 +7,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Small in-memory cache for the latest CIBIL response per customer.
- * Suitable for the current single-instance application. If the application
- * is deployed across multiple instances, replace this with Redis.
- */
+
 @Service
 public class CibilReportCacheService {
 

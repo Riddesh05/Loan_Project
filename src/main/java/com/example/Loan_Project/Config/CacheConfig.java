@@ -58,9 +58,6 @@ public class CacheConfig {
             RedisConnectionFactory redisConnectionFactory,
             RedisCacheConfiguration redisCacheConfiguration) {
 
-        /*
-         * Required by Spring Data Redis 4.1.1
-         */
         RedisCacheWriter cacheWriter =
                 RedisCacheWriter
                         .nonLockingRedisCacheWriter(
