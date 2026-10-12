@@ -3,8 +3,10 @@ package com.example.Loan_Project.ServiceImpl;
 import com.example.Loan_Project.DTO.TwoFactorResponse;
 import com.example.Loan_Project.Entity.Customer;
 import com.example.Loan_Project.Repository.CustomerRepository;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
 public class TwoFactorAuthService {
 
     private final CustomerRepository customerRepository;
