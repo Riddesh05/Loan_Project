@@ -35,4 +35,10 @@ public class User {
 
     @Column(name = "Password")
     private String password;
+
+    @Column(name = "TwoFactorSecret")
+    private String twoFactorSecret;
+
+    @Column(name = "IsFirstTimeLoggedIn", nullable = false)
+    private Boolean isFirstTimeLoggedIn = false;
 }

@@ -23,19 +23,21 @@ public class CustomerController {
     }
 
 
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Customer>> register(@Valid @RequestBody CustomerRegistrationRequest
-                                                     customerRegistrationRequest){
-        Customer customer = customerService.register(customerRegistrationRequest);
 
-        ApiResponse<Customer> response =
-                new ApiResponse<>(
-                        true,
-                        "Registration Successfull",
-                        customer
-                );
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<String>> register(
+            @Valid @RequestBody CustomerRegistrationRequest customerRegistrationRequest) {
+
+        customerService.register(customerRegistrationRequest);
+
+        ApiResponse<String> response = new ApiResponse<>(
+                true,
+                "Registration successful. Please verify your email using the OTP sent to you.",
+                null
+        );
 
         return ResponseEntity.ok(response);
     }
+
 
 }

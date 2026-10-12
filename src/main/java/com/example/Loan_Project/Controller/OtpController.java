@@ -19,22 +19,6 @@ public class OtpController {
     }
 
 
-    @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<String>> sendOtp(
-            @RequestParam String email) {
-
-        otpService.generateAndStoreOtp(email);
-
-        ApiResponse<String> response =
-                new ApiResponse<>(
-                        true,
-                        "OTP sent successfully",
-                        null
-                );
-
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<String>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {

@@ -60,4 +60,12 @@ public class Customer {
     private LocalDateTime createdAt;
 
 
+    @Column(name = "TwoFactorSecret")
+    private String twoFactorSecret;
+
+    @Column(name = "IsFirstTimeLoggedIn", nullable = false)
+    private Boolean isFirstTimeLoggedIn = false;
+
+
+
 }

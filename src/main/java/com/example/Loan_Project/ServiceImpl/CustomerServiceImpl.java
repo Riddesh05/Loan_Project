@@ -8,6 +8,7 @@ import com.example.Loan_Project.Exception.EmailNotVerifiedException;
 import com.example.Loan_Project.Exception.InvalidCredentialsException;
 import com.example.Loan_Project.Repository.CustomerRepository;
 import com.example.Loan_Project.Service.CustomerService;
+import com.example.Loan_Project.Service.OtpService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,12 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final OtpService otpService;
 
-    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder, OtpService otpService) {
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
+        this.otpService = otpService;
     }
 
 
@@ -46,9 +49,11 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setMonthlyInvestment(customerRegistrationRequest.getMonthlyInvestment());
         customer.setCreatedAt(LocalDateTime.now());
 
-        customerRepository.save(customer);
+        Customer savedCustomer = customerRepository.save(customer);
 
-        return customer;
+        otpService.generateAndStoreOtp(savedCustomer.getEmail());
+
+        return savedCustomer;
 
     }
 
