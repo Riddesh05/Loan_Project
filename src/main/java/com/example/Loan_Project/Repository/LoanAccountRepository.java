@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LoanAccountRepository extends JpaRepository<LoanAccount, Integer> {
+public interface LoanAccountRepository extends JpaRepository<LoanAccount, Long> {
 
     Optional<LoanAccount> findByLoanAccountNo(String loanAccountNo);
 

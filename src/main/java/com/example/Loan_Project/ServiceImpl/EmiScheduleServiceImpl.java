@@ -3,8 +3,10 @@ package com.example.Loan_Project.ServiceImpl;
 import com.example.Loan_Project.DTO.*;
 import com.example.Loan_Project.Entity.*;
 import com.example.Loan_Project.Repository.*;
+import com.example.Loan_Project.Service.EmiCalculatorService;
 import com.example.Loan_Project.Service.EmiScheduleService;
 
+import com.example.Loan_Project.Service.PenaltyService;
 import lombok.RequiredArgsConstructor;
 
 import org.modelmapper.ModelMapper;
@@ -23,6 +25,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmiScheduleServiceImpl implements EmiScheduleService {
 
+
+    private final EmiCalculatorService emiCalculatorService;
+    private final PenaltyService penaltyService;
     private final LoanAccountRepository loanAccountRepository;
     private final EmiScheduleRepository emiScheduleRepository;
     private final ModelMapper modelMapper;
@@ -36,108 +41,96 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     @Transactional
     public void generateEmiSchedule(GenerateEmiScheduleRequest request) {
 
+        // 1. Fetch Loan Account
         LoanAccount account = loanAccountRepository
                 .findById(request.getLoanAccountId())
                 .orElseThrow(() ->
-                        new RuntimeException("Loan Account not found"));
+                        new RuntimeException("Loan account not found"));
 
-        if (!"ACTIVE".equalsIgnoreCase(account.getLoanStatus())) {
+        // 2. Check Loan Account Status
+        if (!"ACTIVE".equalsIgnoreCase(
+                String.valueOf(account.getLoanStatus()))) {
             throw new RuntimeException(
-                    "EMI schedule can be generated only for ACTIVE loan");
+                    "EMI schedule can only be generated for ACTIVE loan accounts");
         }
 
-        // Duplicate schedule check
-        if (emiScheduleRepository.existsForAccount(
-                account.getLoanAccountId())) {
+//        // 3. Prevent Duplicate EMI Schedule
+//        if (emiScheduleRepository.existsForAccount(
+//                account.getLoanAccountId())) {
+//            throw new RuntimeException(
+//                    "EMI schedule already exists for this loan account");
+//        }
 
-            throw new RuntimeException(
-                    "EMI schedule already exists for this loan account");
-        }
-
+        // 4. Get Loan Details
         BigDecimal principal = account.getLoanAmount();
         BigDecimal annualRate = account.getInterestRate();
-        Integer tenure = account.getTenureMonths();
+        int tenure = account.getTenureMonths();
         BigDecimal emi = account.getEmiAmount();
 
-        if (principal == null || principal.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Invalid loan amount");
+        // 5. Validate Loan Details
+        if (principal == null
+                || principal.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Loan principal must be greater than zero");
         }
 
         if (annualRate == null
                 || annualRate.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Invalid interest rate");
+            throw new RuntimeException("Interest rate cannot be negative");
+        }
+        if (tenure <= 0) {
+            throw new RuntimeException("Loan tenure must be greater than zero");
+        }
+        if (emi == null
+                || emi.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("EMI amount must be greater than zero");
         }
 
-        if (tenure == null || tenure <= 0) {
-            throw new RuntimeException("Invalid tenure");
-        }
+        // 6. Calculate Monthly Interest Rate
+        BigDecimal monthlyRate =
+                emiCalculatorService.calculateMonthlyRate(annualRate);
 
-        if (emi == null || emi.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Invalid EMI amount");
-        }
-
-        BigDecimal monthlyRate = annualRate.divide(
-                BigDecimal.valueOf(1200),
-                10,
-                RoundingMode.HALF_UP
-        );
-
+        // 7. Calculate First EMI Due Date
         LocalDate firstDueDate =
                 calculateFirstDueDate(account.getDisbursementDate());
 
+        // 8. Generate EMI Installments
         BigDecimal openingBalance = principal;
+
         List<EmiSchedule> schedules = new ArrayList<>();
 
         for (int number = 1; number <= tenure; number++) {
 
-            BigDecimal interest = openingBalance
-                    .multiply(monthlyRate)
-                    .setScale(2, RoundingMode.HALF_UP);
+            EmiSchedule schedule =
+                    emiCalculatorService.calculateInstallment(
+                            openingBalance,
+                            monthlyRate,
+                            emi,
+                            number,
+                            tenure
+                    );
 
-            BigDecimal principalAmount = emi
-                    .subtract(interest)
-                    .setScale(2, RoundingMode.HALF_UP);
-
-            BigDecimal currentEmi = emi;
-
-            // Adjust the last EMI to close the remaining balance
-            if (number == tenure) {
-                principalAmount = openingBalance;
-
-                currentEmi = principalAmount
-                        .add(interest)
-                        .setScale(2, RoundingMode.HALF_UP);
-            }
-
-            BigDecimal closingBalance = openingBalance
-                    .subtract(principalAmount)
-                    .setScale(2, RoundingMode.HALF_UP);
-
-            if (closingBalance.compareTo(BigDecimal.ZERO) < 0) {
-                closingBalance = BigDecimal.ZERO;
-            }
-
-            EmiSchedule schedule = new EmiSchedule();
-
-            // Relationship replaces the old loanAccountId field
+            // Set Loan Account
             schedule.setLoanAccount(account);
+
+            // Set Installment Number
             schedule.setInstallmentNo(number);
-            schedule.setDueDate(firstDueDate.plusMonths(number - 1));
-            schedule.setOpeningBalance(openingBalance);
-            schedule.setPrincipalAmount(principalAmount);
-            schedule.setInterestAmount(interest);
-            schedule.setEmi(currentEmi);
-            schedule.setClosingBalance(closingBalance);
+
+            // Set Due Date
+            schedule.setDueDate(
+                    firstDueDate.plusMonths(number - 1));
+
+            // Set Initial Payment Status
             schedule.setPaymentStatus("Pending");
 
+            // Add EMI to List
             schedules.add(schedule);
-            openingBalance = closingBalance;
-        }
 
+            // Update Opening Balance for Next Installment
+            openingBalance = schedule.getClosingBalance();
+        }
+        // 9. Save All EMI Installments
         emiScheduleRepository.saveAll(schedules);
     }
-
-
     // 2. Get EMI Schedule
     @Override
     @Transactional(readOnly = true)
@@ -252,58 +245,52 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     }
 
 
-    // 5. Get Payment Breakdown
+
     @Override
     @Transactional(readOnly = true)
-    public PaymentBreakdownResponse getPaymentBreakdown(
-            Integer emiScheduleId) {
+    public PaymentBreakdownResponse getPaymentBreakdown(Integer emiScheduleId) {
 
-        EmiSchedule schedule = emiScheduleRepository
-                .findById(emiScheduleId)
-                .orElseThrow(() ->
-                        new RuntimeException("EMI schedule not found"));
+        EmiSchedule schedule = emiScheduleRepository.findById(emiScheduleId)
+                .orElseThrow(() -> new RuntimeException("EMI schedule not found"));
 
         BigDecimal baseEmi = schedule.getEmi();
-
         BigDecimal bounceCharges = penaltyChargeRepository
-                .findByScheduleAndStatus(emiScheduleId, "Pending")
+                .findByEmiSchedule_EmiScheduleIdAndReasonAndStatus(
+                        emiScheduleId, "BOUNCE", "Pending")
                 .stream()
                 .map(PenaltyCharge::getPenaltyAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         LocalDate today = LocalDate.now();
         int overdueDays = 0;
 
         if ("Pending".equalsIgnoreCase(schedule.getPaymentStatus())
                 && today.isAfter(schedule.getDueDate())) {
-
             overdueDays = (int) ChronoUnit.DAYS.between(
                     schedule.getDueDate(), today);
         }
 
-        Integer accountId =
-                schedule.getLoanAccount().getLoanAccountId();
+        BigDecimal dailyPenalty =
+                penaltyService.calculateDailyPenalty(overdueDays);
 
-        BigDecimal lateInterest = BigDecimal.ZERO;
         BigDecimal totalPayable = baseEmi
                 .add(bounceCharges)
-                .add(lateInterest)
+                .add(dailyPenalty)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        PaymentBreakdownResponse response =
-                new PaymentBreakdownResponse();
-
+        PaymentBreakdownResponse response = new PaymentBreakdownResponse();
         response.setEmiScheduleId(schedule.getEmiScheduleId());
-        response.setLoanAccountId(accountId);
+        response.setLoanAccountId(schedule.getLoanAccount().getLoanAccountId());
         response.setInstallmentNo(schedule.getInstallmentNo());
         response.setBaseEmi(baseEmi);
+        response.setDailyPenalty(dailyPenalty);
         response.setBounceCharges(bounceCharges);
-        response.setLatePaymentInterest(lateInterest);
+        response.setLatePaymentInterest(BigDecimal.ZERO);
         response.setOverdueDays(overdueDays);
         response.setTotalPayable(totalPayable);
 
         return response;
     }
+
 
 
     // 6. Verify Payment

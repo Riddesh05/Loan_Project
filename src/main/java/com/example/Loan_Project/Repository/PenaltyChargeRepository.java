@@ -31,4 +31,12 @@ public interface PenaltyChargeRepository
             @Param("emiScheduleId") Integer emiScheduleId,
             @Param("reason") String reason
     );
+
+
+    List<PenaltyCharge> findByEmiSchedule_EmiScheduleIdAndReasonAndStatus(
+            Integer emiScheduleId,
+            String reason,
+            String status
+    );
+
 }

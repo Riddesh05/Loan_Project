@@ -18,4 +18,5 @@ public class PaymentBreakdownResponse {
     private Integer overdueDays;
 
     private BigDecimal totalPayable;
+    private BigDecimal dailyPenalty;
 }
