@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PenaltyChargeRepository
@@ -38,5 +39,26 @@ public interface PenaltyChargeRepository
             String reason,
             String status
     );
+    boolean existsByEmiSchedule_EmiScheduleIdAndReason(
+            Integer emiScheduleId,
+            String reason
+    );
+// NEW METHOD: Loan account ki saari penalties fetch karne ke liye
 
+    List<PenaltyCharge>
+    findByLoanAccount_LoanAccountIdOrderByCreatedAtDesc(
+            Long loanAccountId
+    );
+
+
+    // NEW: Check whether daily late fee already exists for this date
+    boolean existsByEmiSchedule_EmiScheduleIdAndReasonAndPenaltyDate(
+            Integer emiScheduleId,
+            String reason,
+            LocalDate penaltyDate
+    );
+
+    // NEW: Fetch all penalties for a particular EMI
+    List<PenaltyCharge>
+    findByEmiSchedule_EmiScheduleId(Integer emiScheduleId);
 }

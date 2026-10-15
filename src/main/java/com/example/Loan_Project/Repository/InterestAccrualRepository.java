@@ -19,7 +19,7 @@ public interface InterestAccrualRepository
        AND i.status = :status
        """)
     List<InterestAccrual> findByAccountAndInstallmentAndStatus(
-            @Param("accountId") Integer accountId,
+            @Param("accountId") Long accountId,
             @Param("installmentNo") Integer installmentNo,
             @Param("status") String status
     );

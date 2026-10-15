@@ -6,22 +6,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface EmiScheduleRepository
-        extends JpaRepository<EmiSchedule, Integer > {
+        extends JpaRepository<EmiSchedule, Integer> {
 
-//    boolean existsByLoanAccount_LoanAccountId(Integer loanAccountId);
+//    boolean existsByLoanAccount_LoanAccountId(Long loanAccountId);
 //
 //    List<EmiSchedule> findByLoanAccount_LoanAccountIdOrderByInstallmentNoAsc(
-//            Integer loanAccountId);
+//            Long loanAccountId);
 
     @Query("""
            SELECT COUNT(e) > 0
            FROM EmiSchedule e
            WHERE e.loanAccount.loanAccountId = :accountId
            """)
-    boolean existsForAccount(@Param("accountId") Integer accountId);
+    boolean existsForAccount(@Param("accountId") Long accountId);
 
     @Query("""
            SELECT e
@@ -30,6 +29,6 @@ public interface EmiScheduleRepository
            ORDER BY e.installmentNo ASC
            """)
     List<EmiSchedule> findSchedules(
-            @Param("accountId") Integer accountId);
+            @Param("accountId") Long accountId);
 
 }

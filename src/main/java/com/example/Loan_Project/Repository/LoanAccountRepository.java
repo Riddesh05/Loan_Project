@@ -14,15 +14,13 @@ public interface LoanAccountRepository extends JpaRepository<LoanAccount, Long> 
 
     Optional<LoanAccount> findByLoanAccountNo(String loanAccountNo);
 
-//    Optional<LoanAccount> findByDealId(Integer dealId);
-
 
     @Query("""
            SELECT a
            FROM LoanAccount a
-           WHERE a.loanDeal.dealId = :dealId
+           WHERE a.loanDeal.loanDealId = :dealId
            """)
     List<LoanAccount> findAccountsByDeal(
-            @Param("dealId") Integer dealId
+            @Param("dealId") Long dealId
     );
 }
