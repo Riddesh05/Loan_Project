@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Data
 public class EmiScheduleSummaryResponse {
 
-    private Integer loanAccountId;
+    private Long loanAccountId;
 
     private Integer totalInstallments;
     private Integer paidInstallments;

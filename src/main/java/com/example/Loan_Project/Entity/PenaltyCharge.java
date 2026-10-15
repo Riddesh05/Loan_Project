@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,10 @@ public class PenaltyCharge {
 
     @Column(name = "Status", length = 50)
     private String status;
+
+
+    @Column(name = "PenaltyDate")
+    private LocalDate penaltyDate;
 
     @Column(name = "CreatedAt")
     private LocalDateTime createdAt;

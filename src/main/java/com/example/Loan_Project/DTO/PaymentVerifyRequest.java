@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 public class PaymentVerifyRequest {
 
     @NotNull
-    private Integer loanAccountId;
+    private Long loanAccountId;
 
     @NotNull
     private Integer emiScheduleId;

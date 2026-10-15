@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class EmiScheduleResponse {
 
     private Integer emiScheduleId;
-    private Integer loanAccountId;
+    private Long loanAccountId;
     private Integer installmentNo;
     private LocalDate dueDate;
 

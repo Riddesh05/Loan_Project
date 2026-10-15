@@ -14,5 +14,5 @@ import lombok.NoArgsConstructor;
 public class EmiScheduleGenerationRequest {
 
     @NotNull
-    private Integer loanAccountId;
+    private Long loanAccountId;
 }

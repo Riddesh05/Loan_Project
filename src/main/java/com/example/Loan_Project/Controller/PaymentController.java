@@ -1,12 +1,16 @@
 package com.example.Loan_Project.Controller;
 
 import com.example.Loan_Project.DTO.PaymentBreakdownResponse;
-import com.example.Loan_Project.DTO.PaymentVerifyRequest;
+import com.example.Loan_Project.DTO.PenaltyChargeResponse;
 import com.example.Loan_Project.Service.EmiScheduleService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -24,14 +28,25 @@ public class PaymentController {
         );
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<String> verifyPayment(
-            @Valid @RequestBody PaymentVerifyRequest request) {
+//    @PostMapping("/verify")
+//    public ResponseEntity<String> verifyPayment(
+//            @Valid @RequestBody PaymentVerifyRequest request) {
+//
+//        emiScheduleService.verifyPayment(request);
+//
+//        return ResponseEntity.ok(
+//                "Payment verified successfully"
+//        );
+//    }
 
-        emiScheduleService.verifyPayment(request);
+    @GetMapping("/penalties/{loanAccountId}")
+    public ResponseEntity<List<PenaltyChargeResponse>> getPenalties(
+            @PathVariable Long loanAccountId) {
 
         return ResponseEntity.ok(
-                "Payment verified successfully"
+                emiScheduleService.getPenaltiesByLoanAccountId(
+                        loanAccountId
+                )
         );
     }
 }

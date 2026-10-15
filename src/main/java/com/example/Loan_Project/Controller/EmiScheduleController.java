@@ -1,8 +1,9 @@
 package com.example.Loan_Project.Controller;
 
-import com.example.Loan_Project.DTO.*;
+import com.example.Loan_Project.DTO.EmiScheduleResponse;
+import com.example.Loan_Project.DTO.EmiScheduleSummaryResponse;
+import com.example.Loan_Project.DTO.GenerateEmiScheduleRequest;
 import com.example.Loan_Project.Service.EmiScheduleService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/emi-schedule")
+@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class EmiScheduleController {
 
@@ -29,7 +31,7 @@ public class EmiScheduleController {
 
     @GetMapping("/{loanAccountId}")
     public ResponseEntity<List<EmiScheduleResponse>> getEmiSchedule(
-            @PathVariable Integer loanAccountId) {
+            @PathVariable Long loanAccountId) {
 
         return ResponseEntity.ok(
                 emiScheduleService.getEmiSchedule(loanAccountId)
@@ -39,7 +41,7 @@ public class EmiScheduleController {
 
     @GetMapping("/summary/{loanAccountId}")
     public ResponseEntity<EmiScheduleSummaryResponse> getSummary(
-            @PathVariable Integer loanAccountId) {
+            @PathVariable Long loanAccountId) {
 
         return ResponseEntity.ok(
                 emiScheduleService.getSummary(loanAccountId)

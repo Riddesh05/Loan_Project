@@ -7,7 +7,7 @@ import lombok.Data;
 public class GenerateEmiScheduleRequest {
 
     @NotNull(message = "Loan Account ID is required")
-    private Integer loanAccountId;
+    private Long loanAccountId;
 
 
 }
