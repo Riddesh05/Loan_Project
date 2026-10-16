@@ -16,6 +16,7 @@ public class Scorecard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "scorecard_id")
     private Long scorecardId;
 
     @OneToOne
@@ -24,13 +25,15 @@ public class Scorecard {
     @JsonIgnore
     private LoanApplication loanApplication;
 
-    @Column(nullable = false)
+
+
+    @Column(name = "cibil_score", nullable = false)
     private Integer cibilScore;
 
-    @Column(nullable = false)
+    @Column(name = "employment_type", nullable = false)
     private String employmentType;
 
-    @Column(nullable = false)
+    @Column(name = "loan_type", nullable = false)
     private String loanType;
 
     @Column(nullable = false, precision = 18, scale = 2)
@@ -41,11 +44,12 @@ public class Scorecard {
     private BigDecimal eligibleAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private ScorecardStatus status;
 
+    @Column(name = "remarks")
     private String remarks;
 
-    @Column(nullable = false)
+    @Column(name = "generated_at", nullable = false)
     private LocalDateTime generatedAt;
 }

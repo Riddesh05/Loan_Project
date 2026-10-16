@@ -3,7 +3,6 @@ package com.example.Loan_Project.Entity;
 import com.example.Loan_Project.Enum.LoanType;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "loan_deals")
 @Data
-
 public class LoanDeal {
 
     @Id
@@ -20,23 +18,25 @@ public class LoanDeal {
     private Long loanDealId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CustomerId", nullable = false)
+    @JoinColumn(
+            name = "customer_id",
+            referencedColumnName = "customer_id",
+            nullable = false
+    )
     private Customer customer;
 
     @Enumerated(EnumType.STRING)
-  //  @Column(name = "LoanType")
-    @Column(nullable = false)
+    @Column(name = "loan_type", nullable = false)
     private LoanType loanType;
 
-    @Column(name = "LoanAmount", precision = 18, scale = 2)
+    @Column(name = "max_loan_amount", precision = 38, scale = 2)
     private BigDecimal maxLoanAmount;
 
-   //  @Column(name = "TenureMonths")
-    @Column(nullable = false)
+    @Column(name = "max_tenure_months", nullable = false)
     private Integer maxTenureMonths;
 
-  //  @Column(name = "InterestRate", precision = 8, scale = 4)
-     @Column(nullable = false)
+    @Column(name = "interest_rate", precision = 38, scale = 2,
+            nullable = false)
     private BigDecimal interestRate;
 
     @Column(name = "EmiAmount", precision = 18, scale = 2)
@@ -50,7 +50,8 @@ public class LoanDeal {
 
     @Column(name = "IFSCCode")
     private String ifscCode;
-    @Column(nullable = false)
+
+    @Column(name = "active", nullable = false)
     private Boolean active = true;
 
     @Column(name = "EmiDay")
@@ -58,6 +59,7 @@ public class LoanDeal {
 
     @Column(name = "ApprovedAmount", precision = 18, scale = 2)
     private BigDecimal approvedAmount;
-    @Column(nullable = false)
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }
