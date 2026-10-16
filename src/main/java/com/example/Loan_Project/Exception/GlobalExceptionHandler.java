@@ -1,182 +1,153 @@
+
 package com.example.Loan_Project.Exception;
 
+import com.example.Loan_Project.DTO.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 
-import com.example.Loan_Project.Response.ApiResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
-    // Handle duplicate email
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ApiResponse<Object>> handleEmailAlreadyExists(
-            EmailAlreadyExistsException exception) {
-
-        logger.warn("Email already exists: {}", exception.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(exception.getMessage()));
+    public ResponseEntity<ApiResponse<Void>> handleEmailExists(
+            EmailAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.failure(
+                        "Email is already registered", ex.getMessage()));
     }
 
-
-
-    // Handle customer not found
-    @ExceptionHandler(CustomerNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCustomerNotFound(
-            CustomerNotFoundException exception) {
-
-        logger.warn("Customer not found: {}", exception.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(exception.getMessage()));
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<com.example.Loan_Project.Response.ApiResponse<Void>>
+    handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(com.example.Loan_Project.Response.ApiResponse.error(
+                        ex.getMessage()));
     }
 
-
-
-
-
-
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ApiResponse<String>> handleInvalidCredentials(
-            InvalidCredentialsException exception) {
-
-        ApiResponse<String> response =
-                new ApiResponse<>(
-                        false,
-                        exception.getMessage(),
-                        null
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(response);
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<com.example.Loan_Project.Response.ApiResponse<Void>>
+    handleBusinessException(BusinessException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(com.example.Loan_Project.Response.ApiResponse.error(
+                        ex.getMessage()));
     }
 
-
-
-    // Handle CIBIL report not found
-    @ExceptionHandler(CibilReportNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCibilReportNotFound(
-            CibilReportNotFoundException exception) {
-
-        logger.warn("CIBIL report not found: {}", exception.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(exception.getMessage()));
-    }
-
-
-    @ExceptionHandler(EmailNotVerifiedException.class)
-    public ResponseEntity<ApiResponse<String>> handleEmailNotVerified(
-            EmailNotVerifiedException exception)
-    {
-        ApiResponse<String> response =
-                new ApiResponse<>(
-                        false,
-                        exception.getMessage(),
-                        null
-                );
-
-        return  ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(response);
-
-    }
-
-
-
-    // Handle validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleValidationException(
-            MethodArgumentNotValidException exception) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(
+            MethodArgumentNotValidException ex) {
 
-        String message = exception.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
 
-        logger.warn("Request validation failed: {}", message);
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(message));
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure("Validation failed", errors));
     }
 
-
-    @ExceptionHandler(FileStorageException.class)
-    public ResponseEntity<ApiResponse<String>> handleFileStorageException(
-            FileStorageException exception) {
-
-        ApiResponse<String> response =
-                new ApiResponse<>(
-                        false,
-                        exception.getMessage(),
-                        null
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(response);
+    private String formatFieldError(FieldError error) {
+        return error.getField() + ": " + error.getDefaultMessage();
     }
 
-    @ExceptionHandler(DocumentNotFoundException.class)
-    public ResponseEntity<ApiResponse<String>> handleDocumentNotFound(
-            DocumentNotFoundException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(
-                        new ApiResponse<>(
-                                false,
-                                exception.getMessage(),
-                                null
-                        )
-                );
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
+            ConstraintViolationException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure("Validation failed", ex.getMessage()));
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnreadableBody(
+            HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(
+                        "Invalid request body or enum value",
+                        "Check the submitted JSON and field values."));
+    }
 
-    // Handle runtime exceptions
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(
+            NoSuchElementException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.failure(
+                        "Requested resource was not found", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadRequest(
+            IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure("Invalid request", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<com.example.Loan_Project.Response.ApiResponse<Void>>
+    handleMissingParameter(MissingServletRequestParameterException ex) {
+        String message = "Required parameter is missing: " + ex.getParameterName();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(com.example.Loan_Project.Response.ApiResponse.error(message));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConflict(
+            IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.failure(
+                        "Operation cannot be completed in the current state",
+                        ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataAccess(
+            DataAccessException ex) {
+        log.error("Database operation failed", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure(
+                        "Database operation failed",
+                        "Check server logs for details."));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<com.example.Loan_Project.Response.ApiResponse<Void>>
+    handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "Invalid value for parameter: " + ex.getName();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(com.example.Loan_Project.Response.ApiResponse.error(message));
+    }
+
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(
-            RuntimeException exception) {
-
-        logger.warn("Runtime exception occurred: {}", exception.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(exception.getMessage()));
+    public ResponseEntity<ApiResponse<Void>> handleRuntime(RuntimeException ex) {
+        log.warn("Request could not be processed: {}", ex.getMessage(), ex);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(
+                        "Request could not be processed", ex.getMessage()));
     }
 
-    // Handle unexpected exceptions
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleGenericException(
-            Exception exception) {
-
-        logger.error("Unexpected application error occurred", exception);
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(
-                        "An unexpected error occurred"
-                ));
+    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
+        log.error("Unexpected server error", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure(
+                        "An unexpected server error occurred",
+                        "Check server logs for details."));
     }
 }

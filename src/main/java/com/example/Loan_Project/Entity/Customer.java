@@ -1,22 +1,20 @@
 package com.example.Loan_Project.Entity;
 
-
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Customers")
+@Table(name = "customers")
 @Data
 @ToString
 public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CustomerId")
+    @Column(name = "customer_id")
     private Long customerId;
 
     @Column(name = "FirstName", nullable = false)

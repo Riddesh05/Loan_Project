@@ -1,6 +1,6 @@
 package com.example.Loan_Project.DTO;
 
-import com.example.Loan_Project.Entity.EmploymentType;
+import com.example.Loan_Project.Enum.EmploymentType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
