@@ -6,6 +6,7 @@ import com.example.Loan_Project.DTO.LoginResponse;
 import com.example.Loan_Project.Entity.Customer;
 import com.example.Loan_Project.Response.ApiResponse;
 import com.example.Loan_Project.Service.CustomerService;
+import com.example.Loan_Project.ServiceImpl.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final CustomerService customerService;
+    private final JwtService jwtService;
 
-    public AuthController(CustomerService customerService) {
+    public AuthController(CustomerService customerService, JwtService jwtService) {
         this.customerService = customerService;
+        this.jwtService = jwtService;
     }
 
 
@@ -30,11 +33,17 @@ public class AuthController {
     {
         Customer customer = customerService.login(loginRequest);
 
+        String pendingToken = jwtService.generatePendingToken(
+                customer.getEmail(),
+                "CUSTOMER"
+        );
+
         LoginResponse loginResponse = new LoginResponse(
                 customer.getCustomerId(),
                 customer.getFirstName(),
                 customer.getLastName(),
-                customer.getEmail()
+                customer.getEmail(),
+                pendingToken
         );
 
         ApiResponse<LoginResponse> response =

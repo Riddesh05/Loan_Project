@@ -1,3 +1,4 @@
+
 package com.example.Loan_Project.ServiceImpl;
 
 import dev.samstevens.totp.code.CodeVerifier;
@@ -11,8 +12,6 @@ import dev.samstevens.totp.secret.DefaultSecretGenerator;
 import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import org.springframework.stereotype.Service;
-import java.util.Base64;
-
 
 @Service
 public class TwoFactorServiceImpl {
@@ -29,11 +28,14 @@ public class TwoFactorServiceImpl {
                     new SystemTimeProvider()
             );
 
+    // Generate a secret for Google Authenticator
     public String generateSecret() {
         return secretGenerator.generate();
     }
 
-    public String generateQrCode(String email, String secret) {
+    // Generate the QR code as actual PNG image bytes
+    public byte[] generateQrCode(String email, String secret) {
+
         QrData qrData = new QrData.Builder()
                 .label(email)
                 .secret(secret)
@@ -44,15 +46,17 @@ public class TwoFactorServiceImpl {
                 .build();
 
         try {
-            byte[] image = qrGenerator.generate(qrData);
-            return Base64.getEncoder().encodeToString(image);
+            return qrGenerator.generate(qrData);
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "Could not generate authenticator QR code", e);
+                    "Could not generate authenticator QR code", e
+            );
         }
     }
 
+    // Verify the six-digit Google Authenticator code
     public boolean verifyCode(String secret, String code) {
+
         if (secret == null || code == null
                 || !code.matches("\\d{6}")) {
             return false;

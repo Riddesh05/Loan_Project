@@ -64,7 +64,7 @@ public class Customer {
     private String twoFactorSecret;
 
     @Column(name = "IsFirstTimeLoggedIn", nullable = false)
-    private Boolean isFirstTimeLoggedIn = false;
+    private Boolean isFirstTimeLoggedIn = true;
 
 
 

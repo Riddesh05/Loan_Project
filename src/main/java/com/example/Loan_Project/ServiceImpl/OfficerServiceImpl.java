@@ -49,4 +49,27 @@ public class OfficerServiceImpl implements OfficerService {
 
         return user;
     }
+
+
+    @Override
+    public User getOfficerByEmail(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new InvalidCredentialsException(
+                                "Officer not found"
+                        ));
+
+        if (user.getRole() == null ||
+                !"Loan Officer".equals(
+                        user.getRole().getRoleName())) {
+
+            throw new InvalidCredentialsException(
+                    "User is not a loan officer"
+            );
+        }
+
+        return user;
+    }
+
 }

@@ -12,4 +12,6 @@ public class OfficerLoginResponse {
     private String lastName;
     private String email;
     private String role;
+    private String token;
+    private String tokenType;
 }

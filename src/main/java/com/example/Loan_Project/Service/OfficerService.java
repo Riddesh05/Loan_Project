@@ -5,4 +5,7 @@ import com.example.Loan_Project.Entity.User;
 
 public interface OfficerService {
     User login(OfficerLoginRequest request);
+
+    User getOfficerByEmail(String email);
+
 }
