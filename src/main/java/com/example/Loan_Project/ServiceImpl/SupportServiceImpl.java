@@ -55,9 +55,7 @@ public class SupportServiceImpl implements SupportService {
         this.emailService = emailService;
     }
 
-    // ==========================================
     // CUSTOMER - CREATE TICKET
-    // ==========================================
 
     @Override
     public SupportTicketResponse createTicket(
@@ -112,9 +110,7 @@ public class SupportServiceImpl implements SupportService {
         return convertToResponse(savedTicket);
     }
 
-    // ==========================================
     // CUSTOMER - GET TICKETS
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
@@ -138,9 +134,7 @@ public class SupportServiceImpl implements SupportService {
                 .map(this::convertToResponse);
     }
 
-    // ==========================================
     // CO - GET OPEN TICKETS
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
@@ -156,9 +150,7 @@ public class SupportServiceImpl implements SupportService {
                 .map(this::convertToResponse);
     }
 
-    // ==========================================
     // CO - GET ONE TICKET
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
@@ -183,9 +175,7 @@ public class SupportServiceImpl implements SupportService {
         return convertToResponse(ticket);
     }
 
-    // ==========================================
     // CO - RESOLVE TICKET
-    // ==========================================
 
     @Override
     @Transactional
@@ -236,9 +226,7 @@ public class SupportServiceImpl implements SupportService {
         SupportTicket savedTicket =
                 supportTicketRepository.save(ticket);
 
-        // ==========================================
         // CREATE WEBSITE NOTIFICATION
-        // ==========================================
 
         Notification notification =
                 new Notification();
@@ -267,9 +255,7 @@ public class SupportServiceImpl implements SupportService {
 
         notificationRepository.save(notification);
 
-        // ==========================================
         // SEND EMAIL ASYNCHRONOUSLY
-        // ==========================================
 
         Customer customer =
                 savedTicket.getCustomer();
@@ -285,9 +271,7 @@ public class SupportServiceImpl implements SupportService {
         return convertToResponse(savedTicket);
     }
 
-    // ==========================================
     // GENERATE TICKET NUMBER
-    // ==========================================
 
     private String generateTicketNumber() {
 
@@ -311,9 +295,7 @@ public class SupportServiceImpl implements SupportService {
         return ticketNumber;
     }
 
-    // ==========================================
     // ENTITY -> RESPONSE DTO
-    // ==========================================
 
     private SupportTicketResponse convertToResponse(
             SupportTicket ticket

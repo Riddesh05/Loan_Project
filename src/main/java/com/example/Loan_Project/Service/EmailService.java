@@ -9,4 +9,11 @@ public interface EmailService {
             String status,
             String officerRemarks
     );
+
+    void sendForeclosureUpdateEmail(
+            String customerEmail,
+            String customerName,
+            String subject,
+            String details
+    );
 }

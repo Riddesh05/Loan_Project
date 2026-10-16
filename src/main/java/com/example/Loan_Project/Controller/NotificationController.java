@@ -21,9 +21,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    // ==========================================
     // GET ALL CUSTOMER NOTIFICATIONS
-    // ==========================================
 
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ApiResponse<Page<NotificationResponse>>>
@@ -61,9 +59,7 @@ public class NotificationController {
         );
     }
 
-    // ==========================================
     // GET UNREAD NOTIFICATIONS
-    // ==========================================
 
     @GetMapping("/customer/{customerId}/unread")
     public ResponseEntity<ApiResponse<Page<NotificationResponse>>>
@@ -101,9 +97,7 @@ public class NotificationController {
         );
     }
 
-    // ==========================================
     // MARK ONE AS READ
-    // ==========================================
 
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<Void>>
@@ -123,9 +117,7 @@ public class NotificationController {
         );
     }
 
-    // ==========================================
     // MARK ALL AS READ
-    // ==========================================
 
     @PutMapping("/customer/{customerId}/read-all")
     public ResponseEntity<ApiResponse<Void>>

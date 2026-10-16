@@ -19,4 +19,9 @@ public interface NotificationService {
     void markAsRead(Integer notificationId);
 
     void markAllAsRead(Integer customerId);
+
+    void createNotification(
+            Integer customerId,
+            String message
+    );
 }

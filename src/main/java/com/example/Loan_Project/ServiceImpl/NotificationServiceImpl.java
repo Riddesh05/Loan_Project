@@ -21,9 +21,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final CustomerRepository customerRepository;
 
-    // ==========================================
     // GET CUSTOMER NOTIFICATIONS
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
@@ -47,9 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .map(this::mapToResponse);
     }
 
-    // ==========================================
     // GET UNREAD NOTIFICATIONS
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
@@ -73,9 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .map(this::mapToResponse);
     }
 
-    // ==========================================
     // MARK ONE AS READ
-    // ==========================================
 
     @Override
     @Transactional
@@ -96,10 +90,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
-    // ==========================================
     // MARK ALL AS READ
-    // ==========================================
-
     @Override
     @Transactional
     public void markAllAsRead(Integer customerId) {
@@ -127,9 +118,7 @@ public class NotificationServiceImpl implements NotificationService {
         );
     }
 
-    // ==========================================
     // ENTITY -> DTO
-    // ==========================================
 
     private NotificationResponse mapToResponse(
             Notification notification
@@ -171,5 +160,37 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public void createNotification(
+            Integer customerId,
+            String message
+    ) {
+        if (message == null || message.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Notification message is required"
+            );
+        }
+
+        var customer = customerRepository.findById(customerId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Customer not found with ID: " + customerId
+                        )
+                );
+
+        Notification notification = new Notification();
+
+        notification.setCustomer(customer);
+        notification.setSupportTicket(null);
+        notification.setMessage(message);
+        notification.setIsRead(false);
+        notification.setCreatedAt(
+                java.time.LocalDateTime.now()
+        );
+
+        notificationRepository.save(notification);
     }
 }

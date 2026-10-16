@@ -73,4 +73,34 @@ public class EmailServiceImpl
 
         mailSender.send(message);
     }
+    @Async
+    @Override
+    public void sendForeclosureUpdateEmail(
+            String customerEmail,
+            String customerName,
+            String subject,
+            String details
+    ) {
+        if (customerEmail == null || customerEmail.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Customer email is required"
+            );
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(customerEmail);
+        message.setSubject(subject);
+
+        message.setText(
+                "Dear " + customerName + ",\n\n"
+                        + details + "\n\n"
+                        + "Please log in to your Loan Management System "
+                        + "to view your foreclosure details.\n\n"
+                        + "Regards,\n"
+                        + "Loan Management System"
+        );
+
+        mailSender.send(message);
+    }
 }
