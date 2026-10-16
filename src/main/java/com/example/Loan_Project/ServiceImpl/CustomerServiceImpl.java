@@ -44,7 +44,7 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setMobileNo(customerRegistrationRequest.getMobileNo());
         customer.setPanNo(customerRegistrationRequest.getPanNo());
         customer.setAadhaarNo(customerRegistrationRequest.getAadhaarNo());
-        customer.setEmploymentType(customerRegistrationRequest.getEmploymentType());
+//        customer.setEmploymentType(customerRegistrationRequest.getEmploymentType());
         customer.setMonthlyIncome(customerRegistrationRequest.getMonthlyIncome());
         customer.setMonthlyInvestment(customerRegistrationRequest.getMonthlyInvestment());
         customer.setCreatedAt(LocalDateTime.now());
