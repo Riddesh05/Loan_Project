@@ -10,9 +10,7 @@ public interface PenaltyService {
 
     BigDecimal calculateBounceCharge();
 
-    /** Creates any missing overdue charges for a pending EMI. */
     void accruePenaltiesForSchedule(EmiSchedule schedule);
 
-    /** Call only after a trusted payment provider confirms a genuine bounce. */
     void recordBouncePenalty(Integer emiScheduleId);
 }

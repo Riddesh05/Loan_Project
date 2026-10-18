@@ -16,7 +16,6 @@ public interface EmiScheduleService {
 
     void verifyPayment(PaymentVerifyRequest request);
 
-    /** Internal hook; invoke only after a trusted provider confirms a bounce. */
     void recordBouncePenalty(Integer emiScheduleId);
     List<PenaltyChargeResponse> getPenaltiesByLoanAccountId(
             Long loanAccountId

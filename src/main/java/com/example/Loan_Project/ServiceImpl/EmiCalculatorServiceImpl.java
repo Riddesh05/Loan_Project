@@ -30,19 +30,16 @@ public class EmiCalculatorServiceImpl
             int installmentNo,
             int tenure) {
 
-        // Calculate interest
         BigDecimal interest = openingBalance
                 .multiply(monthlyRate)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        // Calculate principal
         BigDecimal principal = emi
                 .subtract(interest)
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal currentEmi = emi;
 
-        // Last EMI adjustment
         if (installmentNo == tenure) {
             principal = openingBalance;
 
@@ -51,7 +48,6 @@ public class EmiCalculatorServiceImpl
                     .setScale(2, RoundingMode.HALF_UP);
         }
 
-        // Calculate closing balance
         BigDecimal closingBalance = openingBalance
                 .subtract(principal)
                 .setScale(2, RoundingMode.HALF_UP);
@@ -60,7 +56,6 @@ public class EmiCalculatorServiceImpl
             closingBalance = BigDecimal.ZERO;
         }
 
-        // Store calculation result in an object
         EmiSchedule schedule = new EmiSchedule();
 
         schedule.setOpeningBalance(openingBalance);

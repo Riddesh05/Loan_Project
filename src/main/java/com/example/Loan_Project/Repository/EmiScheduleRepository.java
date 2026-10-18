@@ -31,4 +31,6 @@ public interface EmiScheduleRepository
     List<EmiSchedule> findSchedules(
             @Param("accountId") Long accountId);
 
+
+    List<EmiSchedule> findByPaymentStatusIgnoreCase(String paymentStatus);
 }

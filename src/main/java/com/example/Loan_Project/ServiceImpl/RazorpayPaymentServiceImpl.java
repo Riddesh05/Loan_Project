@@ -1,13 +1,21 @@
 package com.example.Loan_Project.ServiceImpl;
 
-import com.example.Loan_Project.DTO.*;
+import com.example.Loan_Project.DTO.PaymentBreakdownResponse;
+import com.example.Loan_Project.DTO.PaymentVerifyRequest;
+import com.example.Loan_Project.DTO.RazorpayCreateOrderRequest;
+import com.example.Loan_Project.DTO.RazorpayCreateOrderResponse;
+import com.example.Loan_Project.DTO.RazorpayVerifyRequest;
 import com.example.Loan_Project.Entity.EmiSchedule;
 import com.example.Loan_Project.Exception.BusinessException;
 import com.example.Loan_Project.Exception.ResourceNotFoundException;
 import com.example.Loan_Project.Repository.EmiScheduleRepository;
 import com.example.Loan_Project.Service.EmiScheduleService;
 import com.example.Loan_Project.Service.RazorpayPaymentService;
-import com.razorpay.*;
+import com.razorpay.Order;
+import com.razorpay.Payment;
+import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
+import com.razorpay.Utils;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +56,6 @@ public class RazorpayPaymentServiceImpl
         Long loanAccountId = schedule.getLoanAccount()
                 .getLoanAccountId();
 
-        // Server-side breakdown is the source of the payable amount.
         PaymentBreakdownResponse breakdown =
                 emiScheduleService.getPaymentBreakdown(
                         request.getEmiScheduleId());
@@ -66,7 +73,6 @@ public class RazorpayPaymentServiceImpl
                     "Payment amount must be greater than zero");
         }
 
-        // Razorpay requires INR in paise: ₹100 = 10000 paise.
         long amountPaise = payable
                 .multiply(new BigDecimal("100"))
                 .setScale(0, RoundingMode.UNNECESSARY)
@@ -124,7 +130,6 @@ public class RazorpayPaymentServiceImpl
         }
 
         try {
-            // 1. Verify checkout signature using the server secret.
             JSONObject signatureAttributes = new JSONObject();
             signatureAttributes.put(
                     "razorpay_order_id",
@@ -151,11 +156,9 @@ public class RazorpayPaymentServiceImpl
                         "Invalid Razorpay payment signature");
             }
 
-            // 2. Fetch the order directly from Razorpay.
             Order order = razorpayClient.orders.fetch(
                     request.getRazorpayOrderId());
 
-            // 3. Fetch payment directly from Razorpay.
             Payment payment = razorpayClient.payments.fetch(
                     request.getRazorpayPaymentId());
 
@@ -167,7 +170,6 @@ public class RazorpayPaymentServiceImpl
                         "Payment does not belong to this Razorpay order");
             }
 
-            // 4. Check order metadata against the requested EMI.
             JSONObject notes = order.has("notes")
                     && !order.toJson().isNull("notes")
                     ? order.toJson().getJSONObject("notes")
@@ -181,7 +183,6 @@ public class RazorpayPaymentServiceImpl
                         "Razorpay order does not match this EMI");
             }
 
-            // 5. Recalculate expected amount on the server.
             PaymentBreakdownResponse breakdown =
                     emiScheduleService.getPaymentBreakdown(
                             request.getEmiScheduleId());
@@ -203,7 +204,6 @@ public class RazorpayPaymentServiceImpl
                         "Razorpay amount does not match the payable EMI amount");
             }
 
-            // 6. Require captured payment before EMI settlement.
             String status = payment.get("status");
 
             if (!"captured".equalsIgnoreCase(status)) {
@@ -219,8 +219,6 @@ public class RazorpayPaymentServiceImpl
                         "Payment currency must be INR");
             }
 
-            // 7. Reuse existing settlement logic only after
-            // provider-side verification succeeds.
             PaymentVerifyRequest settlement =
                     new PaymentVerifyRequest();
 

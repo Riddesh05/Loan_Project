@@ -1,8 +1,6 @@
 package com.example.Loan_Project.Controller;
 
-import com.example.Loan_Project.DTO.EmiScheduleResponse;
-import com.example.Loan_Project.DTO.EmiScheduleSummaryResponse;
-import com.example.Loan_Project.DTO.GenerateEmiScheduleRequest;
+import com.example.Loan_Project.DTO.*;
 import com.example.Loan_Project.Service.EmiScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

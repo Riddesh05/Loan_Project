@@ -4,7 +4,6 @@ import com.example.Loan_Project.Enum.EmploymentType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

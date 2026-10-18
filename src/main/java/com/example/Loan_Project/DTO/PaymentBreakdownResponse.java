@@ -11,14 +11,10 @@ public class PaymentBreakdownResponse {
     private Long loanAccountId;
     private Integer installmentNo;
 
-    // EMI amount for the first pending installment requested.
     private BigDecimal baseEmi;
-    // Other unpaid EMIs from previous months.
     private BigDecimal carryForwardEmiAmount;
-    // Current-month EMI(s) included along with previous arrears.
     private BigDecimal currentMonthEmiAmount;
     private Integer installmentsIncluded;
- //   private BigDecimal missedEmiCharge;
     private BigDecimal bounceCharges;
     private BigDecimal latePaymentInterest;
 

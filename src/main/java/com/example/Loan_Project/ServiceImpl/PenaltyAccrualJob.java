@@ -28,10 +28,7 @@ public class PenaltyAccrualJob {
     private final LoanAccountRepository loanAccountRepository;
     private final PenaltyService penaltyService;
 
-    /**
-     * Daily catch-up: creates any missing MISSED_EMI / LATE_FEE rows and blocks
-     * a loan after three consecutive overdue unpaid installments.
-     */
+
     @Scheduled(cron = "0 5 0 * * *", zone = "Asia/Kolkata")
     @Transactional
     public void processOverdueEmis() {
@@ -72,13 +69,11 @@ public class PenaltyAccrualJob {
 
             boolean warningAlreadyLogged = Boolean.TRUE.equals(account.getMissedEmiWarningLogged());
             if (maxConsecutiveMisses >= 2 && !warningAlreadyLogged) {
-                // Operational warning only. Email/SMS delivery needs a configured notification provider.
                 log.warn("Loan account {} has two or more consecutive missed EMIs; review required",
                         account.getLoanAccountId());
                 account.setMissedEmiWarningLogged(true);
                 loanAccountRepository.save(account);
             } else if (maxConsecutiveMisses < 2 && warningAlreadyLogged) {
-                // Reset after the consecutive-miss run is cleared, so a future run can warn again.
                 account.setMissedEmiWarningLogged(false);
                 loanAccountRepository.save(account);
             }

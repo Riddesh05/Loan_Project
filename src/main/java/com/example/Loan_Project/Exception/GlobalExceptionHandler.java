@@ -1,30 +1,27 @@
         package com.example.Loan_Project.Exception;
 
-        import com.example.Loan_Project.Response.ApiResponse;
-        import jakarta.validation.ConstraintViolationException;
-        import lombok.extern.slf4j.Slf4j;
-        import org.springframework.http.HttpStatus;
-        import org.springframework.http.ResponseEntity;
-        import org.springframework.http.converter.HttpMessageNotReadableException;
-        import org.springframework.validation.FieldError;
-        import org.springframework.web.bind.MethodArgumentNotValidException;
-        import org.springframework.web.bind.MissingServletRequestParameterException;
-        import org.springframework.web.bind.annotation.ExceptionHandler;
-        import org.springframework.web.bind.annotation.RestControllerAdvice;
-        import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import com.example.Loan_Project.Response.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 
-        import java.util.List;
-        import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /*
-     * 1. Resource not found
-     * Example: Loan account or EMI schedule does not exist.
-     * HTTP Status: 404
-     */
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(
             ResourceNotFoundException ex) {
@@ -34,11 +31,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /*
-     * 2. Business rule violation
-     * Example: EMI is already paid or schedule already exists.
-     * HTTP Status: 400
-     */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(
             BusinessException ex) {
@@ -48,11 +40,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /*
-     * 3. DTO validation errors
-     * Example: @NotNull, @NotBlank, @DecimalMin.
-     * HTTP Status: 400
-     */
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<List<String>>> handleValidationErrors(
             MethodArgumentNotValidException ex) {
@@ -83,11 +71,7 @@ public class GlobalExceptionHandler {
         return error.getField() + ": " + error.getDefaultMessage();
     }
 
-    /*
-     * 4. Constraint validation errors
-     * Example: Invalid request parameter or path variable constraint.
-     * HTTP Status: 400
-     */
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
             ConstraintViolationException ex) {
@@ -97,10 +81,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /*
-     * 5. Invalid JSON or incorrect request body format
-     * HTTP Status: 400
-     */
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidRequestBody(
             HttpMessageNotReadableException ex) {
@@ -112,10 +93,7 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    /*
-     * 6. Required request parameter is missing
-     * HTTP Status: 400
-     */
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiResponse<Void>> handleMissingParameter(
             MissingServletRequestParameterException ex) {
@@ -128,11 +106,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(message));
     }
 
-    /*
-     * 7. Wrong data type in path variable or request parameter
-     * Example: /api/emi-schedule/abc when an integer is expected.
-     * HTTP Status: 400
-     */
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex) {
@@ -144,13 +118,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(message));
     }
 
-    /*
-     * 8. Any other unhandled exception
-     * HTTP Status: 500
-     *
-     * Log technical details for debugging, but do not expose
-     * internal exception details to the API client.
-     */
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(
             Exception ex) {

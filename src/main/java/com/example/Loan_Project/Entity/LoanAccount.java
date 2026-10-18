@@ -55,7 +55,6 @@ public class LoanAccount {
     @Column(name = "total_paid_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
-    // Tracks whether the two-consecutive-miss warning was already logged.
     @Column(name = "missed_emi_warning_logged", nullable = false)
     private Boolean missedEmiWarningLogged = false;
 

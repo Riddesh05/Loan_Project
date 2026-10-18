@@ -1,20 +1,16 @@
 package com.example.Loan_Project.ServiceImpl;
 
 import com.example.Loan_Project.DTO.*;
-import com.example.Loan_Project.Entity.EmiSchedule;
-import com.example.Loan_Project.Entity.LoanAccount;
-import com.example.Loan_Project.Entity.LoanPayment;
-import com.example.Loan_Project.Entity.PenaltyCharge;
+import com.example.Loan_Project.Entity.*;
 import com.example.Loan_Project.Exception.BusinessException;
 import com.example.Loan_Project.Exception.ResourceNotFoundException;
-import com.example.Loan_Project.Repository.EmiScheduleRepository;
-import com.example.Loan_Project.Repository.LoanAccountRepository;
-import com.example.Loan_Project.Repository.LoanPaymentRepository;
-import com.example.Loan_Project.Repository.PenaltyChargeRepository;
+import com.example.Loan_Project.Repository.*;
 import com.example.Loan_Project.Service.EmiCalculatorService;
 import com.example.Loan_Project.Service.EmiScheduleService;
+
 import com.example.Loan_Project.Service.PenaltyService;
 import lombok.RequiredArgsConstructor;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,37 +39,31 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     private final LoanPaymentRepository loanPaymentRepository;
 
 
-    // 1. Generate EMI Schedule
     @Override
     @Transactional
     public void generateEmiSchedule(GenerateEmiScheduleRequest request) {
 
-        // 1. Fetch Loan Account
         LoanAccount account = loanAccountRepository
                 .findById(request.getLoanAccountId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Loan account not found"));
-        // 2. Check Loan Account Status
         if (!"ACTIVE".equalsIgnoreCase(
                 String.valueOf(account.getLoanStatus()))) {
             throw new BusinessException(
                     "EMI schedule can only be generated for ACTIVE loan accounts");
         }
 
-        // 3. Prevent Duplicate EMI Schedule
         if (emiScheduleRepository.existsForAccount(
                 account.getLoanAccountId())) {
             throw new BusinessException(
                     "EMI schedule already exists for this loan account");
         }
 
-        // 4. Get Loan Details
         BigDecimal principal = account.getLoanAmount();
         BigDecimal annualRate = account.getInterestRate();
         Integer tenureValue = account.getTenureMonths();
         BigDecimal emi = account.getEmiAmount();
 
-        // 5. Validate Loan Details
         if (principal == null
                 || principal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Loan principal must be greater than zero");
@@ -92,15 +82,12 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
             throw new BusinessException("EMI amount must be greater than zero");
         }
 
-        // 6. Calculate Monthly Interest Rate
         BigDecimal monthlyRate =
                 emiCalculatorService.calculateMonthlyRate(annualRate);
 
-        // 7. Calculate First EMI Due Date
         LocalDate firstDueDate =
                 calculateFirstDueDate(account.getDisbursementDate());
 
-        // 8. Generate EMI Installments
         BigDecimal openingBalance = principal;
 
         List<EmiSchedule> schedules = new ArrayList<>(tenure);
@@ -116,29 +103,21 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
                             tenure
                     );
 
-            // Set Loan Account
             schedule.setLoanAccount(account);
 
-            // Set Installment Number
             schedule.setInstallmentNo(number);
 
-            // Set Due Date
             schedule.setDueDate(
                     firstDueDate.plusMonths(number - 1));
 
-            // Set Initial Payment Status
             schedule.setPaymentStatus("Pending");
 
-            // Add EMI to List
             schedules.add(schedule);
 
-            // Update Opening Balance for Next Installment
             openingBalance = schedule.getClosingBalance();
         }
-        // 9. Save All EMI Installments
         emiScheduleRepository.saveAll(schedules);
     }
-    // 2. Get EMI Schedule
 //    @Override
 //    @Transactional(readOnly = true)
 //    public List<EmiScheduleResponse> getEmiSchedule(Long loanAccountId) {
@@ -176,6 +155,106 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
 
 
 
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<EmiScheduleResponse> getEmiSchedule(Long loanAccountId) {
+//
+//        List<EmiSchedule> schedules =
+//                emiScheduleRepository.findSchedules(loanAccountId);
+//
+//        if (schedules.isEmpty()) {
+//            throw new ResourceNotFoundException(
+//                    "EMI schedule not found for loan account: " + loanAccountId
+//            );
+//        }
+//
+//
+//
+//        YearMonth currentMonth = YearMonth.now(
+//                ZoneId.of("Asia/Kolkata")
+//        );
+//
+//        boolean pendingFound = false;
+//
+//        List<EmiScheduleResponse> responses = new ArrayList<>();
+//
+//        for (EmiSchedule schedule : schedules) {
+//
+//            EmiScheduleResponse response =
+//                    modelMapper.map(schedule, EmiScheduleResponse.class);
+//
+//            response.setLoanAccountId(
+//                    schedule.getLoanAccount().getLoanAccountId()
+//            );
+//            boolean payable = false;
+//            if ("Pending".equalsIgnoreCase(schedule.getPaymentStatus())
+//                    && !pendingFound) {
+//                pendingFound = true;
+//                if (schedule.getDueDate() != null) {
+//                    YearMonth emiMonth = YearMonth.from(schedule.getDueDate());
+//                    payable = !currentMonth.isBefore(emiMonth);
+//                }
+//            }
+//
+//            response.setIsPayable(payable);
+//            responses.add(response);
+//        }
+//
+//        return responses;
+//    }
+
+
+
+
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<EmiScheduleResponse> getEmiSchedule(Long loanAccountId) {
+//
+//        List<EmiSchedule> schedules =
+//                emiScheduleRepository.findSchedules(loanAccountId);
+//
+//        if (schedules.isEmpty()) {
+//            throw new ResourceNotFoundException(
+//                    "EMI schedule not found for loan account: " + loanAccountId
+//            );
+//        }
+//
+//        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+//        YearMonth currentMonth = YearMonth.from(today);
+//
+//        // Select the first pending EMI due in the current month.
+//        EmiSchedule currentMonthEmi = schedules.stream()
+//                .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+//                .filter(e -> e.getDueDate() != null)
+//                .filter(e -> !e.getDueDate().isAfter(today))
+//                .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
+//                .findFirst()
+//                .orElse(null);
+//
+//        List<EmiScheduleResponse> responses = new ArrayList<>();
+//
+//        for (EmiSchedule schedule : schedules) {
+//
+//            EmiScheduleResponse response =
+//                    modelMapper.map(schedule, EmiScheduleResponse.class);
+//
+//            response.setLoanAccountId(
+//                    schedule.getLoanAccount().getLoanAccountId()
+//            );
+//
+//            boolean payable = currentMonthEmi != null
+//                    && currentMonthEmi.getEmiScheduleId()
+//                    .equals(schedule.getEmiScheduleId())
+//                    && "Pending".equalsIgnoreCase(schedule.getPaymentStatus());
+//
+//            response.setIsPayable(payable);
+//            responses.add(response);
+//        }
+//
+//        return responses;
+//    }
+
+
     @Override
     @Transactional(readOnly = true)
     public List<EmiScheduleResponse> getEmiSchedule(Long loanAccountId) {
@@ -183,20 +262,23 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
         List<EmiSchedule> schedules =
                 emiScheduleRepository.findSchedules(loanAccountId);
 
-        // Exception test: no EMI schedules found
         if (schedules.isEmpty()) {
             throw new ResourceNotFoundException(
                     "EMI schedule not found for loan account: " + loanAccountId
             );
         }
 
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        YearMonth currentMonth = YearMonth.from(today);
 
-
-        YearMonth currentMonth = YearMonth.now(
-                ZoneId.of("Asia/Kolkata")
-        );
-
-        boolean pendingFound = false;
+        // Select the first pending EMI due in the current month.
+        EmiSchedule currentMonthEmi = schedules.stream()
+                .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+                .filter(e -> e.getDueDate() != null)
+                .filter(e -> !e.getDueDate().isAfter(today))
+                .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
+                .findFirst()
+                .orElse(null);
 
         List<EmiScheduleResponse> responses = new ArrayList<>();
 
@@ -209,23 +291,10 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
                     schedule.getLoanAccount().getLoanAccountId()
             );
 
-            boolean payable = false;
-
-            if ("Pending".equalsIgnoreCase(schedule.getPaymentStatus())
-                    && !pendingFound) {
-
-                pendingFound = true;
-
-                if (schedule.getDueDate() != null) {
-
-                    YearMonth emiMonth =
-                            YearMonth.from(schedule.getDueDate());
-
-                    // EMI month start ho chuka hai.
-                    // Due date cross hone par bhi unpaid EMI payable rahegi.
-                    payable = !currentMonth.isBefore(emiMonth);
-                }
-            }
+            boolean payable = currentMonthEmi != null
+                    && currentMonthEmi.getEmiScheduleId()
+                    .equals(schedule.getEmiScheduleId())
+                    && "Pending".equalsIgnoreCase(schedule.getPaymentStatus());
 
             response.setIsPayable(payable);
             responses.add(response);
@@ -235,7 +304,7 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     }
 
 
-    // 3. Get EMI Summary
+
     @Override
     @Transactional(readOnly = true)
     public EmiScheduleSummaryResponse getSummary(Long loanAccountId) {
@@ -302,7 +371,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     }
 
 
-    // 4. Calculate First Due Date
     private LocalDate calculateFirstDueDate(LocalDateTime disbursementDate) {
 
         if (disbursementDate == null) {
@@ -315,17 +383,10 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
 
 
 
-
-
-
-    // 6. Verify/record a payment. Production use must call this only after a trusted
-    // payment provider has independently confirmed the transaction as successful.
-
     @Override
     @Transactional
     public void verifyPayment(PaymentVerifyRequest request) {
 
-        // 1. Validate request
         if (request == null
                 || request.getEmiScheduleId() == null
                 || request.getLoanAccountId() == null
@@ -335,67 +396,83 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
             throw new BusinessException("Invalid payment request");
         }
 
-        // 2. Fetch selected EMI
         EmiSchedule requestedSchedule = emiScheduleRepository
                 .findById(request.getEmiScheduleId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("EMI schedule not found"));
 
-        // 3. Fetch loan account
         LoanAccount account = loanAccountRepository
                 .findById(request.getLoanAccountId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Loan account not found"));
 
-        // 4. Verify EMI belongs to this loan account
         if (!requestedSchedule.getLoanAccount().getLoanAccountId()
                 .equals(account.getLoanAccountId())) {
             throw new BusinessException(
                     "EMI does not belong to this loan account");
         }
 
-        // 5. Prevent duplicate payment
         if (loanPaymentRepository.existsByTransactionRefNo(
                 request.getTransactionRefNo())) {
             throw new BusinessException("Transaction already processed");
         }
 
-        // 6. Selected EMI must be pending
         if (!"Pending".equalsIgnoreCase(
                 requestedSchedule.getPaymentStatus())) {
             throw new BusinessException("EMI is not pending");
         }
 
-        // 7. Enforce first-pending-EMI payment sequence
+//        List<EmiSchedule> allSchedules =
+//                emiScheduleRepository.findSchedules(
+//                        account.getLoanAccountId());
+//
+//        EmiSchedule firstPending = allSchedules.stream()
+//                .filter(e -> "Pending".equalsIgnoreCase(
+//                        e.getPaymentStatus()))
+//                .findFirst()
+//                .orElseThrow(() ->
+//                        new BusinessException("No pending EMI available"));
+//
+//        if (!firstPending.getEmiScheduleId()
+//                .equals(requestedSchedule.getEmiScheduleId())) {
+//            throw new BusinessException(
+//                    "Pay the first pending EMI first. "
+//                            + "Future EMIs cannot be paid out of sequence.");
+//        }
+
+
         List<EmiSchedule> allSchedules =
                 emiScheduleRepository.findSchedules(
                         account.getLoanAccountId());
 
-        EmiSchedule firstPending = allSchedules.stream()
-                .filter(e -> "Pending".equalsIgnoreCase(
-                        e.getPaymentStatus()))
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        YearMonth currentMonth = YearMonth.from(today);
+
+        if (requestedSchedule.getDueDate() == null
+                || requestedSchedule.getDueDate().isAfter(today)
+                || !YearMonth.from(requestedSchedule.getDueDate())
+                .equals(currentMonth)) {
+            throw new BusinessException(
+                    "Only the eligible EMI due in the current month can initiate payment");
+        }
+
+        EmiSchedule currentMonthEmi = allSchedules.stream()
+                .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+                .filter(e -> e.getDueDate() != null)
+                .filter(e -> !e.getDueDate().isAfter(today))
+                .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
                 .findFirst()
                 .orElseThrow(() ->
-                        new BusinessException("No pending EMI available"));
+                        new BusinessException("No payable EMI available this month"));
 
-        if (!firstPending.getEmiScheduleId()
+        if (!currentMonthEmi.getEmiScheduleId()
                 .equals(requestedSchedule.getEmiScheduleId())) {
             throw new BusinessException(
-                    "Pay the first pending EMI first. "
-                            + "Future EMIs cannot be paid out of sequence.");
+                    "Please select the eligible EMI for the current month");
         }
 
-        // 8. Selected EMI must have reached its due month
         ZoneId businessZone = ZoneId.of("Asia/Kolkata");
-        LocalDate today = LocalDate.now(businessZone);
-
-        if (requestedSchedule.getDueDate() == null) {
-            throw new BusinessException("EMI due date is missing");
-        }
-
-        YearMonth currentMonth = YearMonth.from(today);
-        YearMonth emiMonth = YearMonth.from(
-                requestedSchedule.getDueDate());
+        YearMonth emiMonth = YearMonth.from(requestedSchedule.getDueDate());
 
         if (currentMonth.isBefore(emiMonth)) {
             throw new BusinessException(
@@ -403,7 +480,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
                             + emiMonth);
         }
 
-        // 9. Get the exact eligible installments for this payment
         List<EmiSchedule> installmentsToSettle =
                 getInstallmentsDueThisMonth(
                         account.getLoanAccountId());
@@ -422,7 +498,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
                     "Selected EMI is not due for payment yet");
         }
 
-        // 10. Calculate payable amount on the server
         PaymentBreakdownResponse breakdown =
                 getPaymentBreakdown(
                         requestedSchedule.getEmiScheduleId());
@@ -435,7 +510,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
                             + breakdown.getTotalPayable());
         }
 
-        // 11. Calculate principal reduction and validate EMI amounts
         BigDecimal principalToReduce = BigDecimal.ZERO;
 
         for (EmiSchedule installment : installmentsToSettle) {
@@ -446,7 +520,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
             }
         }
 
-        // 12. Mark included installments as paid
         LocalDateTime now = LocalDateTime.now(businessZone);
 
         for (EmiSchedule installment : installmentsToSettle) {
@@ -456,7 +529,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
 
         emiScheduleRepository.saveAll(installmentsToSettle);
 
-        // 13. Save payment record
         LoanPayment payment = new LoanPayment();
         payment.setLoanAccount(account);
         payment.setPaymentAmount(request.getAmountPaid());
@@ -470,7 +542,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
 
         loanPaymentRepository.save(payment);
 
-        // 14. Update total amount paid
         BigDecimal oldTotalPaid =
                 account.getTotalPaidAmount() == null
                         ? BigDecimal.ZERO
@@ -479,7 +550,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
         account.setTotalPaidAmount(
                 oldTotalPaid.add(request.getAmountPaid()));
 
-        // 15. Update outstanding principal
         BigDecimal outstandingPrincipal =
                 account.getOutstandingPrincipal() == null
                         ? BigDecimal.ZERO
@@ -496,7 +566,6 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
 
         loanAccountRepository.save(account);
 
-        // 16. Settle penalties only for installments included in this payment
         for (EmiSchedule installment : installmentsToSettle) {
 
             List<PenaltyCharge> pendingPenalties =
@@ -520,8 +589,7 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     @Override
     @Transactional
     public void recordBouncePenalty(Integer emiScheduleId) {
-        // Internal-only hook for a trusted payment gateway/bank callback.
-        // There is intentionally no public borrower-facing bounce endpoint.
+
         penaltyService.recordBouncePenalty(emiScheduleId);
     }
 
@@ -531,19 +599,16 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     public List<PenaltyChargeResponse> getPenaltiesByLoanAccountId(
             Long loanAccountId) {
 
-        // 1. Check whether loan account exists
         loanAccountRepository.findById(loanAccountId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Loan account not found"));
 
-        // 2. Fetch penalties from database
         List<PenaltyCharge> penalties =
                 penaltyChargeRepository
                         .findByLoanAccount_LoanAccountIdOrderByCreatedAtDesc(
                                 loanAccountId
                         );
 
-        // 3. Convert Entity into DTO
         return penalties.stream()
                 .map(penalty -> {
                     PenaltyChargeResponse response =
@@ -574,55 +639,170 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
     }
 
 
+//    @Override
+//    @Transactional
+//    public PaymentBreakdownResponse getPaymentBreakdown(Integer emiScheduleId) {
+//        EmiSchedule schedule = emiScheduleRepository.findById(emiScheduleId)
+//                .orElseThrow(() -> new ResourceNotFoundException("EMI schedule not found"));
+//
+//        if (!"Pending".equalsIgnoreCase(schedule.getPaymentStatus())) {
+//            throw new BusinessException("Payment breakdown is available only for a pending EMI");
+//        }
+//
+//        List<EmiSchedule> allSchedules =
+//                emiScheduleRepository.findSchedules(schedule.getLoanAccount().getLoanAccountId());
+//        EmiSchedule firstPending = allSchedules.stream()
+//                .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+//                .findFirst()
+//                .orElseThrow(() -> new BusinessException("No pending EMI available"));
+//
+//        if (!firstPending.getEmiScheduleId().equals(schedule.getEmiScheduleId())) {
+//            throw new BusinessException("Only the first pending EMI can be paid. Clear previous pending EMIs first.");
+//        }
+//
+//        YearMonth currentMonth = YearMonth.now(ZoneId.of("Asia/Kolkata"));
+//        if (currentMonth.isBefore(YearMonth.from(schedule.getDueDate()))) {
+//            throw new BusinessException("This EMI is not payable yet. Payment starts in "
+//                    + YearMonth.from(schedule.getDueDate()));
+//        }
+//
+//        List<EmiSchedule> payableInstallments =
+//                getInstallmentsDueThisMonth(schedule.getLoanAccount().getLoanAccountId());
+//
+//        payableInstallments.forEach(penaltyService::accruePenaltiesForSchedule);
+//
+//        BigDecimal baseEmi = schedule.getEmi() == null ? BigDecimal.ZERO : schedule.getEmi();
+//        BigDecimal carryForwardEmiAmount = payableInstallments.stream()
+//                .filter(e -> !e.getEmiScheduleId().equals(schedule.getEmiScheduleId()))
+//                .filter(e -> YearMonth.from(e.getDueDate()).isBefore(currentMonth))
+//                .map(EmiSchedule::getEmi)
+//                .filter(amount -> amount != null)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//        BigDecimal currentMonthEmiAmount = payableInstallments.stream()
+//                .filter(e -> !e.getEmiScheduleId().equals(schedule.getEmiScheduleId()))
+//                .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
+//                .map(EmiSchedule::getEmi)
+//                .filter(amount -> amount != null)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//
+//        BigDecimal bounceCharges =
+//                sumPendingPenalties(payableInstallments, "BOUNCE");
+//
+//        BigDecimal dailyPenalty =
+//                sumPendingPenalties(payableInstallments, "LATE_FEE");
+//
+//        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+//        int overdueDays = 0;
+//        if (today.isAfter(schedule.getDueDate())) {
+//            overdueDays = (int) ChronoUnit.DAYS.between(schedule.getDueDate(), today);
+//        }
+//
+//        BigDecimal totalPayable = baseEmi
+//                .add(carryForwardEmiAmount)
+//                .add(currentMonthEmiAmount)
+//                .add(bounceCharges)
+//                .add(dailyPenalty)
+//                .setScale(2, RoundingMode.HALF_UP);
+//
+//        PaymentBreakdownResponse response = new PaymentBreakdownResponse();
+//        response.setEmiScheduleId(schedule.getEmiScheduleId());
+//        response.setLoanAccountId(schedule.getLoanAccount().getLoanAccountId());
+//        response.setInstallmentNo(schedule.getInstallmentNo());
+//        response.setBaseEmi(baseEmi);
+//        response.setCarryForwardEmiAmount(carryForwardEmiAmount);
+//        response.setCurrentMonthEmiAmount(currentMonthEmiAmount);
+//        response.setInstallmentsIncluded(payableInstallments.size());
+//        response.setDailyPenalty(dailyPenalty);
+//        response.setBounceCharges(bounceCharges);
+//        response.setLatePaymentInterest(BigDecimal.ZERO);
+//        response.setOverdueDays(overdueDays);
+//        response.setTotalPayable(totalPayable);
+//        return response;
+//    }
+
+
+
     @Override
     @Transactional
     public PaymentBreakdownResponse getPaymentBreakdown(Integer emiScheduleId) {
-        EmiSchedule schedule = emiScheduleRepository.findById(emiScheduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("EMI schedule not found"));
 
-        if (!"Pending".equalsIgnoreCase(schedule.getPaymentStatus())) {
-            throw new BusinessException("Payment breakdown is available only for a pending EMI");
+        EmiSchedule selected = emiScheduleRepository.findById(emiScheduleId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("EMI schedule not found"));
+
+        if (!"Pending".equalsIgnoreCase(selected.getPaymentStatus())) {
+            throw new BusinessException("Selected EMI is not pending");
         }
+
+        if (selected.getDueDate() == null) {
+            throw new BusinessException("EMI due date is missing");
+        }
+
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        YearMonth currentMonth = YearMonth.from(today);
+
+        // Only a due EMI from the current month can initiate payment.
+        if (selected.getDueDate().isAfter(today)
+                || !YearMonth.from(selected.getDueDate()).equals(currentMonth)) {
+            throw new BusinessException(
+                    "Select the eligible EMI due in the current month"
+            );
+        }
+
+        Long loanAccountId =
+                selected.getLoanAccount().getLoanAccountId();
 
         List<EmiSchedule> allSchedules =
-                emiScheduleRepository.findSchedules(schedule.getLoanAccount().getLoanAccountId());
-        EmiSchedule firstPending = allSchedules.stream()
+                emiScheduleRepository.findSchedules(loanAccountId);
+
+        // Confirm that this is the first pending EMI in the current month.
+        EmiSchedule currentMonthEmi = allSchedules.stream()
                 .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+                .filter(e -> e.getDueDate() != null)
+                .filter(e -> !e.getDueDate().isAfter(today))
+                .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("No pending EMI available"));
+                .orElseThrow(() ->
+                        new BusinessException("No payable EMI available this month"));
 
-        if (!firstPending.getEmiScheduleId().equals(schedule.getEmiScheduleId())) {
-            throw new BusinessException("Only the first pending EMI can be paid. Clear previous pending EMIs first.");
+        if (!currentMonthEmi.getEmiScheduleId()
+                .equals(selected.getEmiScheduleId())) {
+            throw new BusinessException(
+                    "Please select the eligible EMI for the current month"
+            );
         }
 
-        YearMonth currentMonth = YearMonth.now(ZoneId.of("Asia/Kolkata"));
-        if (currentMonth.isBefore(YearMonth.from(schedule.getDueDate()))) {
-            throw new BusinessException("This EMI is not payable yet. Payment starts in "
-                    + YearMonth.from(schedule.getDueDate()));
+        // Include every pending installment due up to today.
+        List<EmiSchedule> payableInstallments = allSchedules.stream()
+                .filter(e -> "Pending".equalsIgnoreCase(e.getPaymentStatus()))
+                .filter(e -> e.getDueDate() != null)
+                .filter(e -> !e.getDueDate().isAfter(today))
+                .toList();
+
+        if (payableInstallments.isEmpty()
+                || payableInstallments.stream().noneMatch(
+                e -> e.getEmiScheduleId().equals(emiScheduleId))) {
+            throw new BusinessException("No EMI is payable today");
         }
 
-        List<EmiSchedule> payableInstallments =
-                getInstallmentsDueThisMonth(schedule.getLoanAccount().getLoanAccountId());
+        // Accrue applicable penalties before calculating the total.
+        payableInstallments.forEach(
+                penaltyService::accruePenaltiesForSchedule
+        );
 
-        // Persist missing charges for every unpaid installment included in the
-        // current payable amount (previous arrears + installments due this month).
-        payableInstallments.forEach(penaltyService::accruePenaltiesForSchedule);
-
-        BigDecimal baseEmi = schedule.getEmi() == null ? BigDecimal.ZERO : schedule.getEmi();
-        BigDecimal carryForwardEmiAmount = payableInstallments.stream()
-                .filter(e -> !e.getEmiScheduleId().equals(schedule.getEmiScheduleId()))
+        BigDecimal overdueEmiAmount = payableInstallments.stream()
                 .filter(e -> YearMonth.from(e.getDueDate()).isBefore(currentMonth))
                 .map(EmiSchedule::getEmi)
                 .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal currentMonthEmiAmount = payableInstallments.stream()
-                .filter(e -> !e.getEmiScheduleId().equals(schedule.getEmiScheduleId()))
                 .filter(e -> YearMonth.from(e.getDueDate()).equals(currentMonth))
                 .map(EmiSchedule::getEmi)
                 .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
 
         BigDecimal bounceCharges =
                 sumPendingPenalties(payableInstallments, "BOUNCE");
@@ -630,34 +810,46 @@ public class EmiScheduleServiceImpl implements EmiScheduleService {
         BigDecimal dailyPenalty =
                 sumPendingPenalties(payableInstallments, "LATE_FEE");
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
-        int overdueDays = 0;
-        if (today.isAfter(schedule.getDueDate())) {
-            overdueDays = (int) ChronoUnit.DAYS.between(schedule.getDueDate(), today);
-        }
+        int overdueDays = payableInstallments.stream()
+                .filter(e -> YearMonth.from(e.getDueDate()).isBefore(currentMonth))
+                .mapToInt(e -> (int) Math.max(
+                        0, ChronoUnit.DAYS.between(e.getDueDate(), today)))
+                .max()
+                .orElse(0);
 
-        BigDecimal totalPayable = baseEmi
-                .add(carryForwardEmiAmount)
+        BigDecimal totalPayable = overdueEmiAmount
                 .add(currentMonthEmiAmount)
                 .add(bounceCharges)
                 .add(dailyPenalty)
                 .setScale(2, RoundingMode.HALF_UP);
 
         PaymentBreakdownResponse response = new PaymentBreakdownResponse();
-        response.setEmiScheduleId(schedule.getEmiScheduleId());
-        response.setLoanAccountId(schedule.getLoanAccount().getLoanAccountId());
-        response.setInstallmentNo(schedule.getInstallmentNo());
-        response.setBaseEmi(baseEmi);
-        response.setCarryForwardEmiAmount(carryForwardEmiAmount);
+
+        response.setEmiScheduleId(selected.getEmiScheduleId());
+        response.setLoanAccountId(loanAccountId);
+        response.setInstallmentNo(selected.getInstallmentNo());
+
+        // The selected EMI's normal installment amount.
+        response.setBaseEmi(
+                selected.getEmi() == null ? BigDecimal.ZERO : selected.getEmi()
+        );
+
+        // Overdue installments from earlier months.
+        response.setCarryForwardEmiAmount(overdueEmiAmount);
+
+        // All due installments in the current month.
         response.setCurrentMonthEmiAmount(currentMonthEmiAmount);
+
         response.setInstallmentsIncluded(payableInstallments.size());
         response.setDailyPenalty(dailyPenalty);
         response.setBounceCharges(bounceCharges);
         response.setLatePaymentInterest(BigDecimal.ZERO);
         response.setOverdueDays(overdueDays);
         response.setTotalPayable(totalPayable);
+
         return response;
     }
+
 
     private List<EmiSchedule> getInstallmentsDueThisMonth(Long loanAccountId) {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));

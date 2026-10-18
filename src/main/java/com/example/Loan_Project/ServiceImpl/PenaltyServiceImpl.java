@@ -37,11 +37,7 @@ public class PenaltyServiceImpl implements PenaltyService {
         return BOUNCE_CHARGE;
     }
 
-    /**
-     * Business rule: after the due date, a still-pending EMI receives one
-     * MISSED_EMI charge of Rs. 500 and Rs. 1 for every overdue calendar day.
-     * MISSED_EMI is deliberately distinct from a verified bank/payment bounce.
-     */
+
     @Override
     @Transactional
     public void accruePenaltiesForSchedule(EmiSchedule schedule) {
@@ -54,7 +50,6 @@ public class PenaltyServiceImpl implements PenaltyService {
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDate dueDate = schedule.getDueDate();
 
-        // The EMI is not missed until the due date has passed.
         if (!today.isAfter(dueDate)) {
             return;
         }
@@ -63,8 +58,6 @@ public class PenaltyServiceImpl implements PenaltyService {
                 .existsByEmiSchedule_EmiScheduleIdAndReason(
                         schedule.getEmiScheduleId(), "BOUNCE");
 
-        // Only one ₹500 event charge per EMI. A genuine bounce takes precedence
-        // over a generic missed-EMI reason, preventing accidental double charging.
         if (!bounceChargeExists) {
             PenaltyCharge bounceCharge = new PenaltyCharge();
             bounceCharge.setEmiSchedule(schedule);
@@ -78,7 +71,6 @@ public class PenaltyServiceImpl implements PenaltyService {
             penaltyChargeRepository.save(bounceCharge);
         }
 
-        // One persisted record per overdue date, beginning the day after due date.
         LocalDate penaltyDate = dueDate.plusDays(1);
         while (!penaltyDate.isAfter(today)) {
             boolean lateFeeExists = penaltyChargeRepository
@@ -100,10 +92,6 @@ public class PenaltyServiceImpl implements PenaltyService {
         }
     }
 
-    /**
-     * Internal hook for a trusted gateway/bank callback only. Do not expose
-     * this as a public endpoint that a borrower can call directly.
-     */
     @Override
     @Transactional
     public void recordBouncePenalty(Integer emiScheduleId) {
@@ -123,9 +111,6 @@ public class PenaltyServiceImpl implements PenaltyService {
         LocalDate today = LocalDate.now(BUSINESS_ZONE);
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
 
-        // If a generic missed-EMI fee was already accrued, convert that same
-        // pending ₹500 record into the verified BOUNCE reason instead of adding
-        // a second ₹500 fee for the same EMI.
         var pendingMissedFees = penaltyChargeRepository
                 .findByEmiSchedule_EmiScheduleIdAndReasonAndStatus(
                         emiScheduleId, "MISSED_EMI", "Pending");
